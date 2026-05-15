@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MEB - 1. Matematik Olimpiyatı Değerlendirme Sistemi</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css">
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
+    <style>
+        .gizli { display: none !important; }
+        .aktif { display: block; }
+        .bg-meb-kirmizi { background-color: #E50914; }
+        .text-meb-kirmizi { color: #E50914; }
+        .btn-secili-dogru { background-color: #16a34a !important; color: white !important; transform: scale(1.05); border: 2px solid #14532d;}
+        .btn-secili-yanlis { background-color: #dc2626 !important; color: white !important; transform: scale(1.05); border: 2px solid #7f1d1d;}
+        .math-btn { @apply bg-slate-200 hover:bg-slate-300 text-slate-800 px-3 py-1 rounded font-bold text-lg; }
+    </style>
+</head>
+<body class="bg-gray-100 text-slate-900 font-sans">
+
+    <header class="bg-meb-kirmizi text-white p-4 shadow-xl sticky top-0 z-50">
+        <div class="container mx-auto flex justify-between items-center">
+            <div class="flex items-center gap-3">
+                <div class="bg-white rounded-full h-10 w-10 flex items-center justify-center font-bold text-meb-kirmizi text-xs">MEB</div>
+                <h1 class="text-lg md:text-xl font-bold uppercase tracking-wide">Olimpiyat Portalı</h1>
+            </div>
+            <div class="flex gap-2">
+                <button onclick="anaSayfayaDon()" class="bg-white text-meb-kirmizi hover:bg-gray-200 px-3 py-2 rounded text-sm font-bold shadow">🏠 Ana Sayfa</button>
+                <button id="btn-cikis" onclick="cikisYap()" class="gizli bg-slate-900 hover:bg-black px-4 py-2 rounded text-sm font-bold shadow">Çıkış Yap</button>
+            </div>
+        </div>
+    </header>
+
+    <main class="container mx-auto mt-6 p-4">
+
+        <section id="giris-ekrani" class="aktif max-w-6xl mx-auto">
+            <div class="bg-white rounded-xl shadow-2xl overflow-hidden mb-8 border border-gray-200">
+                <div class="bg-slate-900 text-white p-8 text-center border-b-4 border-meb-kirmizi">
+                    <h2 class="text-3xl md:text-4xl font-extrabold mb-3 uppercase tracking-wider text-transparent bg-clip-text bg-gradient-to-r from-white to-gray-400">1. Matematik Olimpiyatı 2. Aşama Değerlendirme Sistemi</h2>
+                    <p class="text-gray-300 text-lg">Güvenilir, Adil ve Şeffaf Dijital Puanlama Altyapısı</p>
+                </div>
+                <div class="p-6 md:p-8 bg-gray-50">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div class="bg-white p-5 rounded-lg shadow border-l-4 border-meb-kirmizi">
+                            <h4 class="font-bold text-lg mb-2 text-meb-kirmizi">📌 Sınav Yapısı ve Sıralama (İlk 10)</h4>
+                            <p class="text-sm text-gray-700 leading-relaxed">Sınıf bazında sıralama yapılır. Asil ve Yedek sorulardaki tüm eşitliklerde <b>Otomatik Kura</b> çekilerek, insan müdahalesi olmadan İlk 10 sıralama belirlenir.</p>
+                        </div>
+                        <div class="bg-white p-5 rounded-lg shadow border-l-4 border-slate-900">
+                            <h4 class="font-bold text-lg mb-2 text-slate-900">👨‍🏫 Öğretmen Modülü (Kolay Seçim)</h4>
+                            <p class="text-sm text-gray-700 leading-relaxed">Öğretmenler sisteme ismini girerek giriş yapar. Öğrenciyi listeden okul ve sınıf seçerek kolayca bulurlar. Hatalı okumada "Tümünü Sıfırla" diyerek en baştan düzeltme yapabilirler.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="max-w-md mx-auto bg-white p-8 rounded-xl shadow-2xl border border-gray-200">
+                <h3 class="text-xl font-bold text-center mb-6 text-slate-800">Sisteme Giriş Yapın</h3>
+                <div class="flex gap-2 mb-6">
+                    <button onclick="sekmeDegistir('ogrenci')" class="w-1/2 bg-gray-100 hover:bg-gray-200 text-slate-800 font-bold py-3 rounded-lg">Öğrenci/Veli</button>
+                    <button onclick="sekmeDegistir('personel')" class="w-1/2 bg-meb-kirmizi text-white font-bold py-3 rounded-lg shadow-md">Personel Girişi</button>
+                </div>
+
+                <div id="personel-form" class="gizli border-t border-gray-200 pt-6">
+                    <div class="mb-4">
+                        <label class="block text-sm font-bold text-slate-700 mb-1">Kurum Şifresi</label>
+                        <input type="password" id="sifre-input" class="w-full p-3 border rounded bg-gray-50">
+                    </div>
+                    <div class="mb-6">
+                        <label class="block text-sm font-bold text-slate-700 mb-1">Öğretmen Adı Soyadı</label>
+                        <input type="text" id="ogretmen-ad-input" class="w-full p-3 border rounded bg-gray-50" placeholder="(Yöneticiler boş bırakabilir)">
+                    </div>
+                    <button onclick="sistemeGirisYap()" class="w-full bg-slate-900 text-white font-bold py-4 rounded-lg uppercase">Bağlan</button>
+                </div>
+            </div>
+        </section>
+
+        <section id="ogrenci-ekrani" class="gizli max-w-2xl mx-auto bg-white p-6 rounded-lg shadow-xl border">
+            <h2 class="text-2xl font-bold text-center mb-6 text-meb-kirmizi">Öğrenci Sonuç Ekranı</h2>
+            <div class="space-y-4">
+                <select id="sorgu-okul" onchange="dinamikListele('sorgu')" class="w-full p-3 border rounded bg-slate-50"><option value="">Okul Seçin</option></select>
+                <select id="sorgu-sinif" onchange="dinamikIsimListele('sorgu')" disabled class="w-full p-3 border rounded bg-slate-50"><option value="">Sınıf Seçin</option></select>
+                <select id="sorgu-isim" disabled class="w-full p-3 border rounded bg-slate-50"><option value="">Öğrenci İsmine Tıklayın</option></select>
+                <button onclick="sonucGetir()" class="w-full bg-slate-800 text-white font-bold py-3 rounded mt-4">Sonucu Görüntüle</button>
+            </div>
+
+            <div id="sonuc-karti" class="gizli mt-8 p-6 bg-slate-50 border rounded-lg text-center shadow-inner relative overflow-hidden">
+                <div id="ilk-10-rozet" class="gizli absolute top-0 right-0 bg-yellow-400 text-black font-black px-4 py-2 rounded-bl-lg shadow-md uppercase">İlk 10'da!</div>
+                <h3 id="sonuc-isim" class="text-2xl font-bold text-slate-800 mb-1"></h3>
+                <p id="sonuc-okul" class="text-sm font-bold text-slate-500 mb-4"></p>
+                
+                <div class="bg-yellow-100 p-3 rounded mb-4">
+                    <p class="text-xs text-yellow-800 font-bold uppercase">1. Aşama Puanı</p>
+                    <p id="sonuc-birinci-asama" class="text-2xl font-black text-yellow-900">-</p>
+                </div>
+                <div class="grid grid-cols-2 gap-4 mb-4">
+                    <div class="bg-white p-4 rounded shadow border">
+                        <p class="text-xs font-bold uppercase">2. Aşama Asil</p>
+                        <p id="sonuc-asil" class="text-3xl font-extrabold text-blue-700">0</p>
+                    </div>
+                    <div class="bg-white p-4 rounded shadow border">
+                        <p class="text-xs font-bold uppercase">2. Aşama Yedek</p>
+                        <p id="sonuc-yedek" class="text-3xl font-bold text-slate-600">0</p>
+                    </div>
+                </div>
+                <div class="bg-slate-900 text-white p-4 rounded-lg shadow-md">
+                    <p class="text-sm font-semibold opacity-80 mb-1">Sınıf Genelindeki Sıralaması</p>
+                    <div class="text-4xl font-extrabold mb-1">#<span id="sonuc-sira">-</span></div>
+                    <span id="sonuc-durum" class="inline-block text-xs font-bold px-3 py-1 rounded-full mt-2"></span>
+                </div>
+            </div>
+        </section>
+
+        <section id="yonetici-ekrani" class="gizli max-w-7xl mx-auto">
+            <div id="kilit-paneli" class="p-4 rounded-lg shadow mb-6 flex justify-between items-center transition-colors duration-500">
+                <div><h2 class="font-black text-xl" id="kilit-baslik">SİSTEM AÇIK</h2></div>
+                <button id="btn-kilit-degistir" onclick="sistemKilidiniDegistir()" class="bg-red-600 text-white font-bold py-2 px-6 rounded">SİSTEMİ KİLİTLE</button>
+            </div>
+
+            <div class="bg-white p-6 rounded-lg shadow border-t-4 border-slate-900 mb-6">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-xl font-bold text-slate-800">Genel Sıralama ve Öğretmen Raporu</h3>
+                    <button onclick="yoneticiRaporGetir()" class="bg-blue-600 text-white font-bold px-4 py-2 rounded">Verileri Yenile</button>
+                </div>
+                <div id="rapor-alani" class="space-y-6 text-sm">Raporlar yükleniyor...</div>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div class="bg-white p-6 rounded-lg shadow border-t-4 border-meb-kirmizi">
+                    <h3 class="text-xl font-bold mb-4 text-slate-800">Sınıf Bazlı Cevap Anahtarı (Matematik Destekli)</h3>
+                    
+                    <select id="yon-soru-sinif" onchange="yoneticiSorulariTabloyaCek()" class="w-full p-2 border rounded mb-4 font-bold bg-slate-50 border-blue-300">
+                        <option value="4">4. Sınıf Soruları</option>
+                        <option value="5">5. Sınıf Soruları</option>
+                        <option value="6">6. Sınıf Soruları</option>
+                        <option value="7">7. Sınıf Soruları</option>
+                        <option value="8">8. Sınıf Soruları</option>
+                        <option value="9">9. Sınıf Soruları</option>
+                        <option value="10">10. Sınıf Soruları</option>
+                        <option value="11">11. Sınıf Soruları</option>
+                        <option value="12">12. Sınıf Soruları</option>
+                    </select>
+
+                    <div class="overflow-y-auto max-h-60 mb-4 border rounded">
+                        <table class="w-full text-sm text-left">
+                            <thead class="bg-gray-100 sticky top-0"><tr class="font-bold"><th class="p-2">ID</th><th class="p-2">Tür</th><th class="p-2">Puan</th><th class="p-2">Cevap (Önizlemeli)</th></tr></thead>
+                            <tbody id="yon-soru-tablosu"></tbody>
+                        </table>
+                    </div>
+                    
+                    <div class="bg-gray-50 p-3 rounded border">
+                        <h4 class="font-bold text-sm mb-2">Seçili Sınıfın Sorusunu Güncelle</h4>
+                        <p class="text-xs text-gray-500 mb-2">Kopyaladığınız bir √2 sembolünü veya harfi doğrudan aşağıdaki "Cevap" kutusuna yapıştırabilirsiniz. Sistem bunu sorunsuz kaydedecektir.</p>
+                        <div class="flex gap-2 mb-2">
+                            <input type="number" id="yon-soru-id" class="w-20 p-2 border rounded" placeholder="ID">
+                            <input type="number" step="0.1" id="yon-puan" class="w-24 p-2 border rounded" placeholder="Puan">
+                            <input type="text" id="yon-cevap" class="flex-1 p-2 border rounded" placeholder="Cevabı yazın veya yapıştırın">
+                        </div>
+                        <button onclick="yoneticiSoruGuncelle()" class="w-full bg-slate-900 text-white font-bold py-2 rounded mt-2">Cevabı Kaydet</button>
+                    </div>
+
+                    <div class="mt-6 border-t pt-4">
+                        <h4 class="font-bold text-sm mb-2">Soru Sayısını Artır (Açık Olan Sınıfa Soru Ekle)</h4>
+                        <div class="flex gap-2">
+                            <select id="yeni-soru-tipi" class="p-2 border rounded w-1/3"><option value="asil">Asil</option><option value="yedek">Yedek</option></select>
+                            <input type="number" id="yeni-soru-puan" placeholder="Puan (Örn: 5)" class="w-1/3 p-2 border rounded">
+                            <button onclick="yoneticiSoruEkle()" class="bg-green-600 text-white font-bold px-4 rounded w-1/3">Ekle</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="space-y-6">
+                    <div class="bg-white p-6 rounded-lg shadow border-t-4 border-green-600">
+                        <h3 class="text-xl font-bold mb-2 text-slate-800">Toplu Excel/CSV Yükle</h3>
+                        <p class="text-xs mb-4">Okul | İsim | Sınıf/Şube | Okul No | 1. Aşama formattaki dosyanızı yükleyin.</p>
+                        <div class="flex gap-2 mb-2">
+                            <input type="file" id="csv-dosya" accept=".csv" class="w-full p-2 border rounded">
+                            <button onclick="excelYukle()" class="bg-green-600 text-white px-4 rounded font-bold">Yükle</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="ogretmen-ekrani" class="gizli max-w-3xl mx-auto">
+            <div class="bg-slate-900 text-white p-4 mb-4 rounded shadow-lg flex justify-between items-center">
+                <div>
+                    <p class="font-bold text-lg">Öğretmen Modülü</p>
+                    <p id="ogretmen-isim-bilgi" class="text-sm text-gray-300"></p>
+                </div>
+                <span class="bg-green-500 px-2 py-1 rounded text-xs font-bold" id="sistem-durum-rozet">AÇIK</span>
+            </div>
+
+            <div class="bg-white p-5 rounded-lg shadow mb-6 border">
+                <h3 class="font-bold text-lg mb-3">Değerlendirilecek Öğrenciyi Seçin:</h3>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                    <select id="ogr-okul" onchange="dinamikListele('ogr')" class="w-full p-2 border rounded bg-slate-50"><option value="">Okul Seçin</option></select>
+                    <select id="ogr-sinif" onchange="dinamikIsimListele('ogr')" disabled class="w-full p-2 border rounded bg-slate-50"><option value="">Sınıf Seçin</option></select>
+                    <select id="ogr-isim" disabled class="w-full p-2 border rounded bg-slate-50"><option value="">İsim Seçin</option></select>
+                </div>
+                <button onclick="ogrenciOnayla()" class="w-full mt-4 bg-meb-kirmizi text-white py-3 rounded font-bold text-lg">Öğrenci Kâğıdını Aç</button>
+            </div>
+
+            <div id="okuma-alani" class="gizli bg-white p-4 md:p-6 rounded-lg shadow-2xl">
+                <div class="bg-red-50 p-3 border border-red-200 rounded mb-4 flex justify-between items-center">
+                    <span class="text-xs text-red-800 font-bold">Öğrencinin değerlendirmesinde hata mı yaptınız?</span>
+                    <button onclick="ogrenciVerisiSifirla()" class="bg-red-600 hover:bg-red-800 text-white text-xs font-bold px-3 py-2 rounded">Tümünü Sıfırla (Sil)</button>
+                </div>
+
+                <div id="soru-listesi-alani" class="space-y-4"></div>
+                <button onclick="sonucuSistemeKaydet()" class="w-full mt-6 bg-slate-900 text-white font-bold py-4 rounded-lg text-xl">Değerlendirmeyi Kaydet</button>
+            </div>
+        </section>
+
+    </main>
+
+    <script>
+        const API_URL = "http://127.0.0.1:8000";
+        let aktifRol = null, girisYapanOgretmen = null, sistemKilitliMi = false, okunanOgrenciId = null, acikOlanSinif = null;
+
+        function ekranGoster(ekranId) {
+            ['giris-ekrani', 'yonetici-ekrani', 'ogrenci-ekrani', 'ogretmen-ekrani'].forEach(id => {
+                document.getElementById(id)?.classList.add('gizli'); document.getElementById(id)?.classList.remove('aktif');
+            });
+            document.getElementById(ekranId)?.classList.remove('gizli'); document.getElementById(ekranId)?.classList.add('aktif');
+        }
+
+        function sekmeDegistir(tur) {
+            if (tur === 'personel') { document.getElementById('personel-form').classList.remove('gizli'); } 
+            else { ekranGoster('ogrenci-ekrani'); tumOkullariYukle('sorgu'); }
+        }
+
+        function anaSayfayaDon() { ekranGoster('giris-ekrani'); document.getElementById('personel-form').classList.add('gizli'); }
+        function cikisYap() { aktifRol = null; girisYapanOgretmen = null; anaSayfayaDon(); document.getElementById('btn-cikis').classList.add('gizli'); }
+
+        async function sistemeGirisYap() {
+            const sifre = document.getElementById('sifre-input').value, ad = document.getElementById('ogretmen-ad-input').value;
+            try {
+                const res = await fetch(`${API_URL}/api/login`, {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ sifre: sifre, ogretmen_ad_soyad: ad || null })
+                });
+                if(!res.ok) { alert("Şifre hatalı veya isim girmediniz."); return; }
+                const data = await res.json();
+                document.getElementById('btn-cikis').classList.remove('gizli');
+
+                if(data.rol === 'yonetici') {
+                    kilitDurumunuSorgula(); yoneticiSorulariTabloyaCek(); yoneticiRaporGetir(); ekranGoster('yonetici-ekrani');
+                } else {
+                    girisYapanOgretmen = data.ogretmen_adi; document.getElementById('ogretmen-isim-bilgi').innerText = `Öğretmen: ${girisYapanOgretmen}`;
+                    kilitDurumunuSorgula(); tumOkullariYukle('ogr'); ekranGoster('ogretmen-ekrani');
+                }
+            } catch(e) { alert("Sunucu Hatası!"); }
+        }
+
+        // ================= YÖNETİCİ =================
+        async function kilitDurumunuSorgula() {
+            try {
+                const res = await fetch(`${API_URL}/api/sistem/kilit_durumu`); const data = await res.json();
+                sistemKilitliMi = data.kilitli;
+                const panel = document.getElementById('kilit-paneli'), btn = document.getElementById('btn-kilit-degistir');
+                if(sistemKilitliMi) {
+                    panel.className = "p-4 rounded-lg shadow mb-6 flex justify-between items-center bg-red-100 border-2 border-red-500";
+                    document.getElementById('kilit-baslik').innerText = "SİSTEM KİLİTLİ 🔒"; btn.className = "bg-green-600 text-white font-bold py-2 px-6 rounded"; btn.innerText = "SİSTEMİ AÇ";
+                } else {
+                    panel.className = "p-4 rounded-lg shadow mb-6 flex justify-between items-center bg-green-100 border-2 border-green-500";
+                    document.getElementById('kilit-baslik').innerText = "SİSTEM AÇIK 🔓"; btn.className = "bg-red-600 text-white font-bold py-2 px-6 rounded"; btn.innerText = "KİLİTLE";
+                }
+            } catch(e) {}
+        }
+        async function sistemKilidiniDegistir() {
+            try { await fetch(`${API_URL}/api/yonetici/kilit_guncelle?sifre=Sarac.47&kilitli_mi=${!sistemKilitliMi}`, { method: 'POST' }); kilitDurumunuSorgula(); } catch(e) {}
+        }
+        
+        async function yoneticiSorulariTabloyaCek() {
+            const sinif = document.getElementById('yon-soru-sinif').value;
+            try {
+                const res = await fetch(`${API_URL}/api/sorular/${sinif}`); const sorular = await res.json();
+                let html = "";
+                sorular.forEach(s => {
+                    html += `<tr class="border-b hover:bg-gray-50"><td class="p-2 font-bold">${s.id}</td><td class="p-2">${s.soru_tipi} (${s.soru_no})</td><td class="p-2 font-bold text-blue-600">${s.puan_degeri}</td><td class="p-2 text-lg font-bold bg-yellow-50">${s.dogru_cevap_metni||'-'}</td></tr>`;
+                });
+                document.getElementById('yon-soru-tablosu').innerHTML = html;
+            } catch(e) {}
+        }
+
+        async function yoneticiRaporGetir() {
+            try {
+                const res = await fetch(`${API_URL}/api/yonetici/detayli_rapor?sifre=Sarac.47`); const rapor = await res.json();
+                let html = "";
+                for(const [sinif, ogrenciler] of Object.entries(rapor)) {
+                    html += `<div class="mb-6"><h4 class="font-bold text-lg bg-gray-200 p-2 rounded-t border">${sinif}</h4><div class="overflow-x-auto"><table class="w-full text-sm text-left border"><thead class="bg-slate-800 text-white"><tr><th class="p-2">Sıra</th><th class="p-2">Ad Soyad</th><th class="p-2">Puan (Asil/Yedek)</th><th class="p-2">Değerlendiren</th><th class="p-2 text-center">İşlem</th></tr></thead><tbody>`;
+                    if(ogrenciler.length === 0) html += `<tr><td colspan="5" class="p-4 text-center text-gray-500">Bu sınıfta henüz okunmuş kağıt yok.</td></tr>`;
+                    ogrenciler.forEach(o => {
+                        let rozet = o.sira <= 10 ? `<span class="bg-yellow-300 text-black px-2 rounded-full font-bold ml-1 text-xs">İlk 10</span>` : "";
+                        html += `<tr class="border-b hover:bg-gray-50"><td class="p-2 font-bold">${o.sira} ${rozet}</td><td class="p-2">${o.ad_soyad} <span class="text-xs text-gray-500">(${o.sube})</span></td><td class="p-2 text-blue-700 font-bold">${o.asil_puan} <span class="text-xs text-gray-500 font-normal">(Y: ${o.yedek_puan})</span></td><td class="p-2">${o.ogretmen}</td><td class="p-2 text-center"><button onclick="yoneticiOgrenciSifirla(${o.id})" class="bg-red-500 text-white text-xs px-2 py-1 rounded hover:bg-red-700">Sıfırla</button></td></tr>`;
+                    });
+                    html += `</tbody></table></div></div>`;
+                }
+                document.getElementById('rapor-alani').innerHTML = html;
+            } catch(e) { document.getElementById('rapor-alani').innerHTML = "Rapor yüklenemedi!"; }
+        }
+
+        async function yoneticiOgrenciSifirla(id) {
+            if(!confirm("YÖNETİCİ YETKİSİ: Bu öğrencinin notları silinecektir. Emin misiniz?")) return;
+            try { await fetch(`${API_URL}/api/yonetici/ogrenci_sifirla/${id}?sifre=Sarac.47`, {method:'DELETE'}); alert("Öğrenci sıfırlandı."); yoneticiRaporGetir(); } catch(e) { alert("Hata!"); }
+        }
+
+        async function yoneticiSoruGuncelle() {
+            const id = document.getElementById('yon-soru-id').value, puan = document.getElementById('yon-puan').value, cvp = document.getElementById('yon-cevap').value;
+            if(!id) return;
+            try {
+                const res = await fetch(`${API_URL}/api/yonetici/soru_guncelle`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({sifre: "Sarac.47", soru_id: parseInt(id), yeni_puan: puan ? parseFloat(puan) : null, yeni_cevap: cvp || null}) });
+                alert((await res.json()).mesaj); yoneticiSorulariTabloyaCek();
+            } catch(e) {}
+        }
+        async function yoneticiSoruEkle() {
+            const sinif = document.getElementById('yon-soru-sinif').value;
+            const tip = document.getElementById('yeni-soru-tipi').value;
+            const puan = document.getElementById('yeni-soru-puan').value;
+            if(!puan || !sinif) return;
+            try {
+                const res = await fetch(`${API_URL}/api/yonetici/soru_ekle`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({sifre: "Sarac.47", sinif_seviyesi: parseInt(sinif), soru_tipi: tip, puan_degeri: parseFloat(puan)}) });
+                alert((await res.json()).mesaj); yoneticiSorulariTabloyaCek();
+            } catch(e) {}
+        }
+        async function excelYukle() {
+            const dosya = document.getElementById('csv-dosya').files[0]; if(!dosya) return;
+            const fd = new FormData(); fd.append('file', dosya);
+            try { const res = await fetch(`${API_URL}/api/yonetici/ogrenci_yukle_csv`, { method: 'POST', body: fd }); alert((await res.json()).mesaj); yoneticiRaporGetir();} catch(e) { alert("Hata!"); }
+        }
+
+        // ================= ORTAK DİNAMİK AÇILIR MENÜLER =================
+        async function tumOkullariYukle(prefix) {
+            try {
+                const res = await fetch(`${API_URL}/api/public/okullar`); const okullar = await res.json();
+                const sel = document.getElementById(`${prefix}-okul`); sel.innerHTML = '<option value="">Okul Seçin</option>';
+                okullar.forEach(o => sel.innerHTML += `<option value="${o}">${o}</option>`);
+            } catch (e) {}
+        }
+        async function dinamikListele(prefix) {
+            const okul = document.getElementById(`${prefix}-okul`).value, sel = document.getElementById(`${prefix}-sinif`);
+            if(!okul) { sel.disabled = true; return; }
+            try {
+                const res = await fetch(`${API_URL}/api/public/siniflar?okul_adi=${encodeURIComponent(okul)}`); const s = await res.json();
+                sel.innerHTML = '<option value="">Sınıf Seçin</option>';
+                s.forEach(x => sel.innerHTML += `<option value="${x}">${x}</option>`); sel.disabled = false;
+            } catch(e){}
+        }
+        async function dinamikIsimListele(prefix) {
+            const okul = document.getElementById(`${prefix}-okul`).value, sinif = document.getElementById(`${prefix}-sinif`).value, sel = document.getElementById(`${prefix}-isim`);
+            if(!sinif) { sel.disabled = true; return; }
+            acikOlanSinif = sinif; // Öğretmen okuma yaparken soruları çekmek için kaydedilir
+            try {
+                const res = await fetch(`${API_URL}/api/public/isimler?okul_adi=${encodeURIComponent(okul)}&sinif=${sinif}`); const i = await res.json();
+                sel.innerHTML = '<option value="">Öğrenci İsmine Tıklayın</option>';
+                i.forEach(x => sel.innerHTML += `<option value="${x.id}">${x.ad_soyad} ${x.sube ? '('+x.sube+')' : ''}</option>`); sel.disabled = false;
+            } catch(e){}
+        }
+
+        // ================= ÖĞRETMEN OKUMA (SINIF BAZLI) =================
+        async function ogrenciOnayla() {
+            const id = document.getElementById('ogr-isim').value;
+            if(!id) { alert("Lütfen menüden öğrenci seçin!"); return; }
+            okunanOgrenciId = parseInt(id); 
+            
+            // Seçili sınıfın sorularını çek
+            const alan = document.getElementById('soru-listesi-alani');
+            try {
+                const res = await fetch(`${API_URL}/api/sorular/${acikOlanSinif}`); const sorular = await res.json(); alan.innerHTML = "";
+                sorular.forEach(s => {
+                    const r = s.soru_tipi === 'asil' ? 'bg-blue-100 text-blue-800' : 'bg-orange-100 text-orange-800';
+                    let spanCevap = s.dogru_cevap_metni ? `<span class="bg-yellow-100 px-2 rounded font-black text-black">${s.dogru_cevap_metni}</span>` : 'Yok';
+                    alan.innerHTML += `<div class="soru-satiri flex flex-col md:flex-row justify-between p-4 bg-gray-50 border rounded-lg" data-soruid="${s.id}"><div class="mb-2"><span class="font-bold text-lg">Soru ${s.soru_no}</span><span class="text-xs ${r} px-2 rounded ml-2 uppercase">${s.soru_tipi} (${s.puan_degeri} P)</span><p class="text-sm mt-1">Cevap: ${spanCevap}</p></div><div class="flex gap-2"><button onclick="secimYap(this, true)" class="btn-secim w-16 bg-slate-200 font-bold rounded text-2xl shadow">+</button><button onclick="secimYap(this, false)" class="btn-secim w-16 bg-slate-200 font-bold rounded text-2xl shadow">-</button></div></div>`;
+                });
+            } catch (e) {}
+
+            document.getElementById('okuma-alani').classList.remove('gizli');
+            document.querySelectorAll('.btn-secim').forEach(b => { b.classList.remove('btn-secili-dogru', 'btn-secili-yanlis'); b.classList.add('bg-slate-200'); b.parentElement.removeAttribute('data-cevap'); });
+        }
+        function secimYap(btn, isDogru) {
+            const k = btn.parentElement;
+            k.querySelectorAll('.btn-secim').forEach(b => { b.classList.remove('btn-secili-dogru', 'btn-secili-yanlis'); b.classList.add('bg-slate-200'); });
+            if (isDogru) { btn.classList.add('btn-secili-dogru'); k.setAttribute('data-cevap', 'true'); } else { btn.classList.add('btn-secili-yanlis'); k.setAttribute('data-cevap', 'false'); }
+            btn.classList.remove('bg-slate-200');
+        }
+        async function ogrenciVerisiSifirla() {
+            if(!confirm("Bu öğrencinin notları Tümüyle silinecek! Emin misiniz?")) return;
+            try {
+                const res = await fetch(`${API_URL}/api/ogretmen/ogrenci_sifirla/${okunanOgrenciId}?ogretmen_ad=${girisYapanOgretmen}`, {method: 'DELETE'});
+                if(!res.ok) { alert("Sadece kağıdı okuyan öğretmen silebilir veya sistem kilitlidir."); return; }
+                alert("Sıfırlandı."); ogrenciOnayla(); 
+            } catch(e) { alert("Hata!"); }
+        }
+        async function sonucuSistemeKaydet() {
+            if(sistemKilitliMi) { alert("Sistem kilitli!"); return; }
+            let yanitlar = [], eksik = false;
+            document.querySelectorAll('.soru-satiri').forEach(s => {
+                const cvp = s.querySelector('.flex.gap-2').getAttribute('data-cevap');
+                if(!cvp) eksik = true;
+                yanitlar.push({ soru_id: parseInt(s.getAttribute('data-soruid')), dogru_mu: cvp === 'true' });
+            });
+            if(eksik) { alert("Tüm soruları işaretleyin!"); return; }
+            try {
+                const res = await fetch(`${API_URL}/api/ogretmen/degerlendir`, {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ ogrenci_id: okunanOgrenciId, ogretmen_ad_soyad: girisYapanOgretmen, yanitlar: yanitlar })
+                });
+                if(!res.ok) alert("HATA: " + (await res.json()).detail);
+                else { alert("Kayıt Başarılı!"); document.getElementById('okuma-alani').classList.add('gizli'); document.getElementById('ogr-isim').value = ""; }
+            } catch(e) { alert("Hata!"); }
+        }
+
+        // ================= VELİ SONUÇ =================
+        async function sonucGetir() {
+            const id = document.getElementById('sorgu-isim').value; if(!id) return;
+            try {
+                const res = await fetch(`${API_URL}/api/public/sonuc/${id}`); const data = await res.json();
+                document.getElementById('sonuc-isim').innerText = data.ad_soyad;
+                document.getElementById('sonuc-okul').innerText = `${data.okul} - Sınıf: ${data.sinif}`;
+                document.getElementById('sonuc-birinci-asama').innerText = data.birinci_asama !== null ? data.birinci_asama : "Belirtilmemiş";
+                
+                const dEl = document.getElementById('sonuc-durum');
+                if(data.durum === "Değerlendirilmedi") {
+                    document.getElementById('sonuc-asil').innerText = "-"; document.getElementById('sonuc-yedek').innerText = "-";
+                    document.getElementById('sonuc-sira').innerText = "?"; dEl.innerText = "Henüz Okunmadı";
+                    dEl.className = "inline-block bg-gray-200 text-gray-700 text-xs font-bold px-3 py-1 rounded-full mt-2";
+                    document.getElementById('ilk-10-rozet').classList.add('gizli');
+                } else {
+                    document.getElementById('sonuc-asil').innerText = data.asil_puan; document.getElementById('sonuc-yedek').innerText = data.yedek_puan;
+                    document.getElementById('sonuc-sira').innerText = data.sira; dEl.innerText = data.durum;
+                    dEl.className = data.durum.includes("Kura") ? "inline-block bg-purple-100 text-purple-800 text-xs font-bold px-3 py-1 rounded-full mt-2" : "inline-block bg-green-100 text-green-800 text-xs font-bold px-3 py-1 rounded-full mt-2";
+                    if(data.ilk_10 && data.sira > 0) document.getElementById('ilk-10-rozet').classList.remove('gizli');
+                    else document.getElementById('ilk-10-rozet').classList.add('gizli');
+                }
+                document.getElementById('sonuc-karti').classList.remove('gizli');
+            } catch (e) { alert("Hata!"); }
+        }
+    </script>
+</body>
+</html>
