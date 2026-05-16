@@ -1,4 +1,4 @@
-from fastapi import FastAPI, HTTPException, Depends, File, UploadFile
+from fastapi import FastAPI, HTTPException, Depends, File, UploadFile, Form
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
 from sqlalchemy import create_engine, Column, Integer, String, Boolean, Float, ForeignKey
@@ -44,7 +44,7 @@ class Ogrenci(Base):
 class Soru(Base):
     __tablename__ = "sorular"
     id = Column(Integer, primary_key=True, index=True)
-    sinif_seviyesi = Column(Integer, index=True) # YENİ: Sorular artık sınıflara özel!
+    sinif_seviyesi = Column(Integer, index=True)
     soru_tipi = Column(String)  
     soru_no = Column(Integer)
     puan_degeri = Column(Float)
@@ -63,6 +63,22 @@ class Yanit(Base):
 class LoginRequest(BaseModel):
     sifre: str
     ogretmen_ad_soyad: Optional[str] = None
+
+class YeniOgrenciRequest(BaseModel):
+    sifre: str
+    ad_soyad: str
+    okul: str
+    sinif: int
+    sube: str
+    birinci_asama_puani: Optional[float] = None
+    zorla_kaydet: bool = False  # Çift kayıtta 'Evet' denirse True gelir
+
+class OgrenciGuncelleRequest(BaseModel):
+    sifre: str
+    ad_soyad: str
+    okul: str
+    sinif_seviyesi: int
+    sube: str
 
 class YanitGiris(BaseModel):
     soru_id: int
@@ -95,21 +111,23 @@ def baslangic_verilerini_yukle():
     if db.query(SistemAyar).filter(SistemAyar.ayar_adi == "sistem_kilitli").first() is None:
         db.add(SistemAyar(ayar_adi="sistem_kilitli", ayar_degeri=False))
     
-    # Tüm sınıflar için ayrı ayrı 15 soru (10 Asil, 5 Yedek) oluştur
     siniflar = [4, 5, 6, 7, 8, 9, 10, 11, 12]
     if db.query(Soru).first() is None:
         for s in siniflar:
-            # Asil Sorular
+            # Asil Sorular (10 Soru)
             for i in range(1, 11):
                 puan = 3.0 if i <= 4 else (4.0 if i <= 7 else 5.0)
                 db.add(Soru(sinif_seviyesi=s, soru_tipi="asil", soru_no=i, puan_degeri=puan, dogru_cevap_metni=""))
-            # Yedek Sorular (İlk ikisi 4 Puan, Son üçü 5 Puan)
+            # Yedek Sorular (İlk 2 soru 4 Puan, Son 3 soru 5 Puan)
             for i in range(1, 6):
                 puan = 4.0 if i <= 2 else 5.0
                 db.add(Soru(sinif_seviyesi=s, soru_tipi="yedek", soru_no=i, puan_degeri=puan, dogru_cevap_metni=""))
     db.commit()
     db.close()
 
+# ==========================================
+# GİRİŞ VE KİLİT UÇLARI
+# ==========================================
 @app.post("/api/login")
 def sisteme_giris(req: LoginRequest):
     if req.sifre == YONETICI_SIFRE: return {"rol": "yonetici"}
@@ -135,6 +153,64 @@ def kilit_guncelle(sifre: str, kilitli_mi: bool):
     db.close()
     return {"mesaj": "Sistem güncellendi."}
 
+# ==========================================
+# YÖNETİCİ: ÖĞRENCİ YÖNETİMİ (MANUEL LİSTE, SİLME, DÜZENLEME VE ÇİFT KAYIT)
+# ==========================================
+
+@app.post("/api/yonetici/ogrenci_ekle")
+def ogrenci_ekle_manuel(req: YeniOgrenciRequest):
+    if req.sifre != YONETICI_SIFRE: raise HTTPException(status_code=401)
+    db = SessionLocal()
+    
+    # Çift kayıt uyarısı algoritması
+    if not req.zorla_kaydet:
+        mevcut = db.query(Ogrenci).filter(Ogrenci.ad_soyad == req.ad_soyad, Ogrenci.sinif_seviyesi == req.sinif).first()
+        if mevcut:
+            db.close()
+            return {"status": "uyari", "mesaj": f"Sistemde {req.sinif}. Sınıfta {req.ad_soyad} isimli bir öğrenci zaten var! Yine de eklemek ister misiniz?"}
+            
+    yeni_ogr = Ogrenci(ad_soyad=req.ad_soyad, okul=req.okul, sinif_seviyesi=req.sinif, sube=req.sube, birinci_asama_puani=req.birinci_asama_puani)
+    db.add(yeni_ogr)
+    db.commit()
+    db.close()
+    return {"status": "basarili", "mesaj": f"{req.ad_soyad} sisteme kaydedildi."}
+
+@app.get("/api/yonetici/tum_ogrenciler")
+def yonetici_ogrenci_listesi(sifre: str):
+    """Yöneticinin düzenlemesi için tüm öğrenci listesini verir."""
+    if sifre != YONETICI_SIFRE: raise HTTPException(status_code=401)
+    db = SessionLocal()
+    ogrenciler = db.query(Ogrenci).order_by(Ogrenci.sinif_seviyesi.asc(), Ogrenci.ad_soyad.asc()).all()
+    db.close()
+    return ogrenciler
+
+@app.delete("/api/yonetici/ogrenci_sil/{ogrenci_id}")
+def yonetici_ogrenci_sil(ogrenci_id: int, sifre: str):
+    """Yöneticinin öğrenciyi sistemden tamamen silmesi."""
+    if sifre != YONETICI_SIFRE: raise HTTPException(status_code=401)
+    db = SessionLocal()
+    ogrenci = db.query(Ogrenci).filter(Ogrenci.id == ogrenci_id).first()
+    if not ogrenci: raise HTTPException(status_code=404)
+    db.delete(ogrenci)
+    db.commit()
+    db.close()
+    return {"mesaj": "Öğrenci sistemden TAMAMEN SİLİNDİ."}
+
+@app.put("/api/yonetici/ogrenci_guncelle/{ogrenci_id}")
+def yonetici_ogrenci_bilgi_guncelle(ogrenci_id: int, req: OgrenciGuncelleRequest):
+    """Yöneticinin öğrencinin ismini, okulunu vs. değiştirmesi."""
+    if req.sifre != YONETICI_SIFRE: raise HTTPException(status_code=401)
+    db = SessionLocal()
+    ogrenci = db.query(Ogrenci).filter(Ogrenci.id == ogrenci_id).first()
+    if not ogrenci: raise HTTPException(status_code=404)
+    ogrenci.ad_soyad = req.ad_soyad
+    ogrenci.okul = req.okul
+    ogrenci.sinif_seviyesi = req.sinif_seviyesi
+    ogrenci.sube = req.sube
+    db.commit()
+    db.close()
+    return {"mesaj": "Öğrenci bilgileri güncellendi."}
+
 @app.post("/api/yonetici/ogrenci_yukle_csv")
 async def ogrenci_yukle_csv(file: UploadFile = File(...)):
     contents = await file.read()
@@ -146,6 +222,7 @@ async def ogrenci_yukle_csv(file: UploadFile = File(...)):
 
     db = SessionLocal()
     eklenen = 0
+    atlanan = 0
     for row in veri[1:]:
         if len(row) >= 5:
             okul = row[0].strip()
@@ -158,14 +235,24 @@ async def ogrenci_yukle_csv(file: UploadFile = File(...)):
             birinci_asama = float(puan_str) if puan_str else None
 
             if sinif > 0 and ad_soyad:
+                # Toplu yüklemede çiftleri otomatik atlar, böylece aynı excel yüklenirse bozulmaz.
+                mevcut = db.query(Ogrenci).filter(Ogrenci.ad_soyad == ad_soyad, Ogrenci.sinif_seviyesi == sinif).first()
+                if mevcut:
+                    atlanan += 1
+                    continue
+                    
                 db.add(Ogrenci(okul=okul, ad_soyad=ad_soyad, sinif_seviyesi=sinif, sube=sube, ogrenci_no=ogrenci_no, birinci_asama_puani=birinci_asama))
                 eklenen += 1
     db.commit()
     db.close()
-    return {"mesaj": f"{eklenen} öğrenci başarıyla eklendi."}
+    return {"mesaj": f"{eklenen} yeni öğrenci eklendi. (Zaten var olan {atlanan} öğrenci atlandı.)"}
 
+# ==========================================
+# YÖNETİCİ: RAPORLAMA VE SORULAR
+# ==========================================
 @app.get("/api/yonetici/detayli_rapor")
 def yonetici_detayli_rapor(sifre: str):
+    """Sadece Asil puanı EŞİT olanlarda Yedek'in devreye girdiğini açıkça raporlar."""
     if sifre != YONETICI_SIFRE: raise HTTPException(status_code=401)
     db = SessionLocal()
     siniflar = db.query(Ogrenci.sinif_seviyesi).distinct().order_by(Ogrenci.sinif_seviyesi).all()
@@ -176,31 +263,28 @@ def yonetici_detayli_rapor(sifre: str):
         ogrenciler = db.query(Ogrenci).filter(Ogrenci.sinif_seviyesi == sinif, Ogrenci.degerlendiren_ogretmen.isnot(None)).order_by(Ogrenci.asil_puan.desc(), Ogrenci.yedek_puan.desc(), Ogrenci.kura_degeri.desc()).all()
         sinif_sonuclari = []
         for i, ogr in enumerate(ogrenciler):
-            durum = "Net Puan"
-            if i > 0 and (ogr.asil_puan == ogrenciler[i-1].asil_puan and ogr.yedek_puan == ogrenciler[i-1].yedek_puan): durum = "Otomatik Kura"
-            if i < len(ogrenciler)-1 and (ogr.asil_puan == ogrenciler[i+1].asil_puan and ogr.yedek_puan == ogrenciler[i+1].yedek_puan): durum = "Otomatik Kura"
+            esitlik_durumu = False
+            kura_durumu = False
+            
+            # Beraberlik Kontrolü (Asil puanı kimlerle eşit?)
+            if i > 0 and ogr.asil_puan == ogrenciler[i-1].asil_puan:
+                esitlik_durumu = True
+                if ogr.yedek_puan == ogrenciler[i-1].yedek_puan: kura_durumu = True
+            if i < len(ogrenciler)-1 and ogr.asil_puan == ogrenciler[i+1].asil_puan:
+                esitlik_durumu = True
+                if ogr.yedek_puan == ogrenciler[i+1].yedek_puan: kura_durumu = True
+                
+            durum_metni = "Net Asil Puan"
+            if esitlik_durumu and not kura_durumu: durum_metni = "Yedek Puan İle Belirlendi"
+            if kura_durumu: durum_metni = "Otomatik Kurayla Belirlendi"
                 
             sinif_sonuclari.append({
                 "id": ogr.id, "sira": i + 1, "ad_soyad": ogr.ad_soyad, "okul": ogr.okul, "sube": ogr.sube,
-                "asil_puan": ogr.asil_puan, "yedek_puan": ogr.yedek_puan, "durum": durum, "ogretmen": ogr.degerlendiren_ogretmen
+                "asil_puan": ogr.asil_puan, "yedek_puan": ogr.yedek_puan, "durum": durum_metni, "ogretmen": ogr.degerlendiren_ogretmen
             })
         rapor[f"{sinif}. Sınıflar"] = sinif_sonuclari
     db.close()
     return rapor
-
-@app.delete("/api/yonetici/ogrenci_sifirla/{ogrenci_id}")
-def yonetici_ogrenci_sifirla(ogrenci_id: int, sifre: str):
-    if sifre != YONETICI_SIFRE: raise HTTPException(status_code=401)
-    db = SessionLocal()
-    ogrenci = db.query(Ogrenci).filter(Ogrenci.id == ogrenci_id).first()
-    if not ogrenci: raise HTTPException(status_code=404)
-    db.query(Yanit).filter(Yanit.ogrenci_id == ogrenci_id).delete()
-    ogrenci.asil_puan = 0.0
-    ogrenci.yedek_puan = 0.0
-    ogrenci.degerlendiren_ogretmen = None
-    db.commit()
-    db.close()
-    return {"mesaj": "Öğrenci verileri yönetici tarafından sıfırlandı."}
 
 @app.post("/api/yonetici/soru_guncelle")
 def soru_guncelle(req: SoruGuncelleRequest):
@@ -218,20 +302,21 @@ def soru_ekle(req: SoruEkleRequest):
     if req.sifre != YONETICI_SIFRE: raise HTTPException(status_code=401)
     db = SessionLocal()
     mevcut_sayi = db.query(Soru).filter(Soru.sinif_seviyesi == req.sinif_seviyesi, Soru.soru_tipi == req.soru_tipi).count()
-    yeni_soru = Soru(sinif_seviyesi=req.sinif_seviyesi, soru_tipi=req.soru_tipi, soru_no=mevcut_sayi+1, puan_degeri=req.puan_degeri, dogru_cevap_metni="")
-    db.add(yeni_soru)
+    db.add(Soru(sinif_seviyesi=req.sinif_seviyesi, soru_tipi=req.soru_tipi, soru_no=mevcut_sayi+1, puan_degeri=req.puan_degeri, dogru_cevap_metni=""))
     db.commit()
     db.close()
     return {"mesaj": f"{req.sinif_seviyesi}. Sınıflar için yeni {req.soru_tipi} soru eklendi."}
 
 @app.get("/api/sorular/{sinif_seviyesi}")
 def sorulari_getir(sinif_seviyesi: int):
-    """Belirtilen sınıfa ait soruları döndürür."""
     db = SessionLocal()
     sorular = db.query(Soru).filter(Soru.sinif_seviyesi == sinif_seviyesi).order_by(Soru.soru_tipi.asc(), Soru.soru_no.asc()).all()
     db.close()
     return sorular
 
+# ==========================================
+# ÖĞRETMEN DEĞERLENDİRME
+# ==========================================
 @app.post("/api/ogretmen/degerlendir")
 def kagit_oku(req: DegerlendirmeRequest):
     db = SessionLocal()
@@ -273,7 +358,6 @@ def ogrenci_sifirla(ogrenci_id: int, ogretmen_ad: str):
         raise HTTPException(status_code=403, detail="Sistem Kilitli!")
         
     ogrenci = db.query(Ogrenci).filter(Ogrenci.id == ogrenci_id).first()
-    if not ogrenci: raise HTTPException(status_code=404)
     if ogrenci.degerlendiren_ogretmen and ogrenci.degerlendiren_ogretmen != ogretmen_ad:
         db.close()
         raise HTTPException(status_code=403, detail="Sadece okuyan öğretmen silebilir!")
@@ -286,6 +370,9 @@ def ogrenci_sifirla(ogrenci_id: int, ogretmen_ad: str):
     db.close()
     return {"mesaj": "Öğrenci verileri sıfırlandı."}
 
+# ==========================================
+# PUBLIC UÇLAR VE LİSTELER
+# ==========================================
 @app.get("/api/public/okullar")
 def okullari_getir():
     db = SessionLocal()
@@ -324,14 +411,21 @@ def sonuc_getir(ogrenci_id: int):
     db.close()
 
     sira = 0
-    durum = "Net Puan"
+    durum = "Net Asil Puan"
     for i, ogr in enumerate(sinif_listesi):
         if ogr.id == hedef.id:
             sira = i + 1
-            if i > 0 and (ogr.asil_puan == sinif_listesi[i-1].asil_puan and ogr.yedek_puan == sinif_listesi[i-1].yedek_puan):
-                durum = "Otomatik Kurayla Belirlendi"
-            if i < len(sinif_listesi)-1 and (ogr.asil_puan == sinif_listesi[i+1].asil_puan and ogr.yedek_puan == sinif_listesi[i+1].yedek_puan):
-                durum = "Otomatik Kurayla Belirlendi"
+            esitlik_durumu = False
+            kura_durumu = False
+            if i > 0 and ogr.asil_puan == sinif_listesi[i-1].asil_puan:
+                esitlik_durumu = True
+                if ogr.yedek_puan == sinif_listesi[i-1].yedek_puan: kura_durumu = True
+            if i < len(sinif_listesi)-1 and ogr.asil_puan == sinif_listesi[i+1].asil_puan:
+                esitlik_durumu = True
+                if ogr.yedek_puan == sinif_listesi[i+1].yedek_puan: kura_durumu = True
+                
+            if esitlik_durumu and not kura_durumu: durum = "Yedek Puanla Belirlendi"
+            if kura_durumu: durum = "Otomatik Kurayla Belirlendi"
             break
 
     return {
